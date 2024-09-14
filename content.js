@@ -1,8 +1,8 @@
-/**
- * ================================================
- *                    单词高亮
- * ================================================
- */
+// 白名单里才监听
+const whiteList = [
+  'stackoverflow.blog'
+]
+
 let wordSet = new Set()
 
 function debounce(func, wait) {
@@ -16,17 +16,19 @@ function debounce(func, wait) {
 function highlightWordsWithObserver() {
   highlightWord()
 
-  const debouncedHighlight = debounce(() => {
-    observer.disconnect()
-    highlightWord()
+  if (whiteList.includes(window.location.host)) {
+    const debouncedHighlight = debounce(() => {
+      observer.disconnect()
+      highlightWord()
+      observer.observe(document.body, config)
+    }, 300)
+  
+    const config = { childList: true, subtree: true }
+    const observer = new MutationObserver(() => {
+      debouncedHighlight()
+    })
     observer.observe(document.body, config)
-  }, 300)
-
-  const config = { childList: true, subtree: true }
-  const observer = new MutationObserver(() => {
-    debouncedHighlight()
-  })
-  observer.observe(document.body, config)
+  }
 }
 
 function highlightWord() {
@@ -73,18 +75,22 @@ function highlightWord() {
   })
 }
 
+function refreshHighlightWord() {
+  const list = document.querySelectorAll(".highlight")
+  list.forEach((node) => {
+    if (!wordSet.has(node.innerHTML.toLowerCase())) {
+      node.classList.remove("highlight")
+    }
+  })
+}
+
 function updateHighlightWord(word, add = true) {
   if (add) {
     wordSet.add(word)
     highlightWord()
   } else {
     wordSet.delete(word)
-    const list = document.querySelectorAll(".highlight")
-    list.forEach((node) => {
-      if (node.innerHTML.toLowerCase() === word.toLowerCase()) {
-        node.classList.remove("highlight")
-      }
-    })
+    refreshHighlightWord()
   }
 
   chrome.storage.sync.set({ highlightWords: [...wordSet] })
@@ -105,54 +111,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 })
 
-/**
- * ================================================
- *                    浮标管理
- * ================================================
- */
 
-function createTooltip(text, x, y) {
-  const existingTooltip = document.querySelector(".selection-tooltip")
-  if (existingTooltip) {
-    existingTooltip.remove()
-  }
+document.addEventListener("click", (event) => {
+  if (event.target.tagName === 'VOLC-TRANSLATE') {
+    const shadowRoot = event.target.shadowRoot
+    const star = shadowRoot.querySelector('.star')
+    const word = shadowRoot.querySelector('.word-info-text').textContent
+    if (star.classList.contains('active')) {
+      updateHighlightWord(word, false)
+    } else {
+      updateHighlightWord(word, true)
 
-  const tooltip = document.createElement("div")
-  tooltip.classList.add("selection-tooltip")
-  tooltip.textContent = wordSet.has(text) ? "取消高亮" : "设置高亮"
-  tooltip.style.position = "absolute"
-  tooltip.style.top = `${y}px`
-  tooltip.style.left = `${x}px`
-  tooltip.style.padding = "10px"
-  tooltip.style.background = "#333"
-  tooltip.style.color = "#fff"
-  tooltip.style.borderRadius = "5px"
-  tooltip.style.zIndex = "9999"
-  tooltip.style.cursor = "pointer"
-
-  tooltip.addEventListener("click", () => {
-    updateHighlightWord(text, !wordSet.has(text))
-    tooltip.remove()
-  })
-
-  document.body.appendChild(tooltip)
-}
-
-document.addEventListener("mouseup", (event) => {
-  const selection = window.getSelection()
-  const selectedText = selection.toString().trim()
-
-  if (selectedText.length > 0) {
-    const range = selection.getRangeAt(0).getBoundingClientRect()
-    const tooltipX = range.right + window.scrollX
-    const tooltipY = range.top + window.scrollY
-    createTooltip(selectedText, tooltipX, tooltipY)
-  }
-})
-
-document.addEventListener("mousedown", (event) => {
-  const existingTooltip = document.querySelector(".selection-tooltip")
-  if (existingTooltip && !existingTooltip.contains(event.target)) {
-    existingTooltip.remove()
+    }
   }
 })
