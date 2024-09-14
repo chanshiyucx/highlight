@@ -144,8 +144,8 @@ document.addEventListener("mouseup", (event) => {
 
   if (selectedText.length > 0) {
     const range = selection.getRangeAt(0).getBoundingClientRect()
-    const tooltipX = range.right
-    const tooltipY = range.bottom + window.scrollY
+    const tooltipX = range.right + window.scrollX
+    const tooltipY = range.top + window.scrollY
     createTooltip(selectedText, tooltipX, tooltipY)
   }
 })
