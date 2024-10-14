@@ -49,10 +49,35 @@
         svg {
             width: 20px;
         }
+
+        .btn {
+            margin-right: 12px;
+            padding: 6px 8px;
+            border-radius: 3px;
+            background-color: #eee;
+        }
+
+        .btn:hover {
+            background-color: #aaa;
+        }
+
+        #importFileInput {
+            display: none;
+        }
+
+        .exportAndImport {
+            margin-bottom: 8px;
+        }
+
     </style>
 </head>
 <body>
     <div class="container">
+        <div class="exportAndImport">
+            <button id="exportBtn" class="btn">Export</button>
+            <button id="importBtn" class="btn">Import</button>
+            <input type="file" id="importFileInput" accept=".csv">
+        </div>
         <div class="add">
             <input type="text" id="newWord" placeholder="Enter a word" />
             <button id="addWordBtn">
